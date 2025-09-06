@@ -10,7 +10,7 @@ const Message = sequelize.define(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    sender: {
+    sender: { 
       type: DataTypes.UUID,
       allowNull: false,
       references: { model: "User", key: "id" },

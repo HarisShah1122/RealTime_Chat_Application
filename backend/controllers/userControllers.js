@@ -1,21 +1,27 @@
 import asyncHandler from "express-async-handler";
 import User from "../models/userModel.js";
-import generateToken from "../config/generateToken.js";  
+import generateToken from "../config/generateToken.js";
+import { Op } from "sequelize";
 
+// @desc   Register a new user
+// @route  POST /api/user
+// @access Public
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, photo } = req.body;
 
   if (!name || !email || !password) {
     res.status(400);
-    throw new Error("Please Enter All The Mandatory Fields");
+    throw new Error("Please enter all mandatory fields");
   }
 
-  const userExists = await User.findOne({ email });
+  // Check if user already exists
+  const userExists = await User.findOne({ where: { email } });
   if (userExists) {
     res.status(400);
     throw new Error("User already exists");
   }
 
+  // Create user (password will be hashed automatically by hook)
   const user = await User.create({
     name,
     email,
@@ -25,48 +31,58 @@ const registerUser = asyncHandler(async (req, res) => {
 
   if (user) {
     res.status(201).json({
-      _id: user._id,
+      id: user.id,
       name: user.name,
       email: user.email,
       photo: user.photo,
-      token: generateToken(user._id),
+      token: generateToken(user.id),
     });
   } else {
     res.status(400);
-    throw new Error("Failed to create User");
+    throw new Error("Failed to create user");
   }
 });
 
+// @desc   Authenticate user & get token
+// @route  POST /api/user/login
+// @access Public
 const authUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  const user = await User.findOne({ email });
+
+  const user = await User.findOne({ where: { email } });
 
   if (user && (await user.matchPassword(password))) {
-    res.status(201).json({
-      _id: user._id,
+    res.json({
+      id: user.id,
       name: user.name,
       email: user.email,
       photo: user.photo,
-      token: generateToken(user._id),
+      token: generateToken(user.id),
     });
   } else {
     res.status(400);
-    throw new Error("Invalid Email id or Password");
+    throw new Error("Invalid email or password");
   }
 });
 
+// @desc   Get all users except logged-in user
+// @route  GET /api/user?search=keyword
+// @access Private
 const allUsers = asyncHandler(async (req, res) => {
-  const keyword = req.query.search
-    ? {
-        $or: [
-          { name: { $regex: req.query.search, $options: "i" } },
-          { email: { $regex: req.query.search, $options: "i" } },
-        ],
-      }
-    : {};
+  const search = req.query.search ? req.query.search : "";
 
-  const users = await User.find(keyword).find({ _id: { $ne: req.user._id } });
-  res.send(users);
+  const users = await User.findAll({
+    where: {
+      [Op.or]: [
+        { name: { [Op.like]: `%${search}%` } },
+        { email: { [Op.like]: `%${search}%` } },
+      ],
+      id: { [Op.ne]: req.user.id }, 
+    },
+    attributes: { exclude: ["password"] }, 
+  });
+
+  res.json(users);
 });
 
 export { registerUser, authUser, allUsers };

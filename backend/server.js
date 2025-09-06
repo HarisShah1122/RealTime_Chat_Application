@@ -10,6 +10,7 @@ import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import { Server } from "socket.io";
 import path from "path";
 import { fileURLToPath } from "url";
+import cors from "cors"; // ✅ Import CORS
 
 // Fix __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -18,11 +19,39 @@ const __dirname = path.dirname(__filename);
 const webapp = express();
 dotenv.config();
 
+// ✅ Enable CORS for frontend (localhost:3000)
+// ✅ Enable CORS globally
+webapp.use(
+  cors({
+    origin: "http://localhost:3000", // React frontend
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
+
+// ✅ Explicitly handle preflight requests
+webapp.options("*", (req, res) => {
+  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.sendStatus(200);
+});
+
+// ✅ Make sure preflight requests are handled
+webapp.options("*", cors());
+
 webapp.use(express.json());
+
+// API Routes
 webapp.use("/api/user", userRoutes);
 webapp.use("/api/chat", chatRoutes);
 webapp.use("/api/message", messageRoutes);
 
+// Serve frontend in production
 if (process.env.NODE_ENV === "production") {
   webapp.use(express.static(path.join(__dirname, "frontend/build")));
   webapp.get("*", (req, res) => {
@@ -34,18 +63,19 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
+// Error handling
 webapp.use(notFound);
 webapp.use(errorHandler);
 
 const port = config.port || 8080;
-const server = webapp.listen(
-  port,
-  () => console.log(`The server started at port ${port}`.blue.bold)
+const server = webapp.listen(port, () =>
+  console.log(`The server started at port ${port}`.blue.bold)
 );
 
+// ✅ Socket.IO setup
 const io = new Server(server, {
   pingTimeout: 60000,
-  cors: { origin: "*" },
+  cors: { origin: "http://localhost:3000" }, // Match frontend
 });
 
 io.on("connection", (socket) => {
