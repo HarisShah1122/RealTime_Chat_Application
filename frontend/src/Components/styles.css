@@ -1,24 +1,25 @@
-.chat-container ::-webkit-scrollbar {
+.chat-container::-webkit-scrollbar {
   width: 5px;
   margin-left: 1px;
-  height: 100%;
   border-radius: 10px;
   background-color: #eff6f9db;
 }
 
-.chat-container ::-webkit-scrollbar-thumb {
+.chat-container::-webkit-scrollbar-thumb {
   background: #09101824;
   border-radius: 10px;
 }
 
-.chat-container ::-webkit-scrollbar-thumb:hover {
+.chat-container::-webkit-scrollbar-thumb:hover {
   background: #0101138f;
   border-radius: 10px;
 }
-.chat-container ::-webkit-scrollbar-track {
+
+.chat-container::-webkit-scrollbar-track {
   background: transparent;
   border-radius: 10px;
 }
+
 .notification-badge {
   position: relative;
   display: inline-block;
@@ -32,4 +33,12 @@
   color: white;
   border-radius: 50%;
   padding: 0px 5px 0px 5px;
+}
+.scrollable-chat {
+  scrollbar-width: none; 
+  -ms-overflow-style: none; 
+}
+
+.scrollable-chat::-webkit-scrollbar {
+  display: none; 
 }

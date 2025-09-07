@@ -14,15 +14,15 @@ import {
   Box,
   useMediaQuery,
 } from "@chakra-ui/react";
-import axios from "axios";
 import { useEffect, useState } from "react";
 import { ChatState } from "../context/chatProvider.js";
 import UserListItem from "./UserAvatar/UserListItem.js";
 import UserBadgeItem from "./UserAvatar/UserBadgeItem.js";
+import { api } from "../utils/api";
 
 const GroupChatModal = ({ children }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [groupChatName, setGroupChatName] = useState();
+  const [groupChatName, setGroupChatName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [searchResult, setSearchResult] = useState([]);
@@ -32,8 +32,9 @@ const GroupChatModal = ({ children }) => {
   const { user, chats, setChats } = ChatState();
   const [isSmallScreen] = useMediaQuery("(max-width: 500px)");
   const [isVerySmallScreen] = useMediaQuery("(max-width: 370px)");
+
   const handleGroup = (userToAdd) => {
-    if (selectedUsers.includes(userToAdd)) {
+    if (selectedUsers.find((u) => u._id === userToAdd._id)) {
       toast({
         title: "User is already added",
         status: "warning",
@@ -43,37 +44,31 @@ const GroupChatModal = ({ children }) => {
       });
       return;
     }
-
     setSelectedUsers([...selectedUsers, userToAdd]);
   };
 
-  const handleSearch = async (search) => {
-    setSearch(search);
-    if (!search) {
+  const handleSearch = async (query) => {
+    setSearch(query);
+    if (!query) {
       setSearchResult([]);
       return;
     }
 
     try {
       setLoading(true);
-      const config = {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      };
-      const { data } = await axios.get(`/api/user?search=${search}`, config);
-      // console.log(data);
-      setLoading(false);
+      const { data } = await api.get(`/user?search=${query}`);
       setSearchResult(data);
     } catch (error) {
       toast({
-        title: "Error Occured!",
-        description: "Failed to Load the Search Results",
+        title: "Error Occurred!",
+        description: "Failed to load search results",
         status: "error",
         duration: 2000,
         isClosable: true,
         position: "bottom-left",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -82,9 +77,9 @@ const GroupChatModal = ({ children }) => {
   };
 
   const handleSubmit = async () => {
-    if (!groupChatName || !selectedUsers) {
+    if (!groupChatName || selectedUsers.length === 0) {
       toast({
-        title: "Please fill all the feilds",
+        title: "Please fill all the fields",
         status: "warning",
         duration: 2000,
         isClosable: true,
@@ -94,23 +89,15 @@ const GroupChatModal = ({ children }) => {
     }
 
     try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      };
-      const { data } = await axios.post(
-        `/api/chat/group`,
-        {
-          name: groupChatName,
-          users: JSON.stringify(selectedUsers.map((u) => u._id)),
-        },
-        config
-      );
+      const { data } = await api.post("/chat/group", {
+        name: groupChatName,
+        users: JSON.stringify(selectedUsers.map((u) => u._id)),
+      });
+
       setChats([data, ...chats]);
       onClose();
       toast({
-        title: "New Group Chat Created",
+        title: "New group chat created",
         status: "success",
         duration: 2000,
         isClosable: true,
@@ -118,8 +105,8 @@ const GroupChatModal = ({ children }) => {
       });
     } catch (error) {
       toast({
-        title: "Failed to Create the Chat",
-        description: error.response.data,
+        title: "Failed to create the chat",
+        description: error.response?.data || error.message,
         status: "error",
         duration: 2000,
         isClosable: true,
@@ -127,9 +114,12 @@ const GroupChatModal = ({ children }) => {
       });
     }
   };
+
   useEffect(() => {
     handleSearch(search);
+    // eslint-disable-next-line
   }, [search]);
+
   return (
     <>
       <span onClick={onOpen}>{children}</span>
@@ -137,13 +127,11 @@ const GroupChatModal = ({ children }) => {
       <Modal onClose={onClose} isOpen={isOpen} isCentered>
         <ModalOverlay />
         <ModalContent
-          // h={isSmallScreen ? "40%" : "50%"}
           w={isSmallScreen ? (isVerySmallScreen ? "90%" : "70%") : "50%"}
         >
           <ModalHeader
             fontSize={isSmallScreen ? "15px" : "30px"}
             fontWeight="bold"
-            // fontFamily="Work sans"
             display="flex"
             justifyContent="center"
           >
@@ -177,14 +165,9 @@ const GroupChatModal = ({ children }) => {
               ))}
             </Box>
             {loading ? (
-              // <ChatLoading />
               <div>Loading...</div>
             ) : (
-              <Box
-                w="100%"
-                maxHeight="150px" // Set a maximum height for the container
-                overflowY="auto" // Add a scrollbar when content exceeds the maximum height
-              >
+              <Box w="100%" maxHeight="150px" overflowY="auto">
                 {searchResult?.slice(0, 4).map((user) => (
                   <UserListItem
                     key={user._id}
@@ -196,7 +179,7 @@ const GroupChatModal = ({ children }) => {
             )}
           </ModalBody>
           <ModalFooter>
-            <Button onClick={handleSubmit} bg="#ed8b0c" color={"white"}>
+            <Button onClick={handleSubmit} bg="#ed8b0c" color="white">
               Create
             </Button>
           </ModalFooter>

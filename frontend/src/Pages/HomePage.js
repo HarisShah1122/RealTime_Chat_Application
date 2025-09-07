@@ -14,9 +14,12 @@ import Signup from "../Components/Authentication/Signup";
 import { useHistory } from "react-router-dom";
 import WAVES from "vanta/dist/vanta.waves.min.js";
 import * as THREE from "three";
+
 const HomePage = () => {
   const [vantaEffect, setVantaEffect] = useState(0);
   const myRef = useRef(null);
+  const history = useHistory();
+
   useEffect(() => {
     if (!vantaEffect) {
       setVantaEffect(
@@ -38,7 +41,6 @@ const HomePage = () => {
       if (vantaEffect) vantaEffect.destroy();
     };
   }, [vantaEffect]);
-  const history = useHistory();
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("userInfo"));
@@ -47,27 +49,19 @@ const HomePage = () => {
 
   return (
     <div style={{ width: "100%", height: "900px", margin: 0 }} ref={myRef}>
-      <Container
-        maxW="2xl"
-        centerContent
-        style={{ width: "100%", height: "100%" }}
-      >
+      <Container maxW="2xl" centerContent style={{ width: "100%", height: "100%" }}>
         <Box
           d="flex"
           justifyContent="center"
           p="4"
           bg="white"
           w="100%"
-          m="10px 0 10px 0"
+          m="10px 0"
           borderRadius="10px"
           borderWidth="1px"
           boxShadow="outline"
         >
-          <Text
-            fontFamily="Libre Baskerville"
-            fontSize="2xl"
-            textAlign="center"
-          >
+          <Text fontFamily="Libre Baskerville" fontSize="2xl" textAlign="center">
             Chat-Stream
           </Text>
         </Box>
@@ -103,4 +97,5 @@ const HomePage = () => {
     </div>
   );
 };
+
 export default HomePage;

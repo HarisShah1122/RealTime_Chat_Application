@@ -75,7 +75,7 @@ const server = webapp.listen(port, () =>
 // ✅ Socket.IO setup
 const io = new Server(server, {
   pingTimeout: 60000,
-  cors: { origin: "http://localhost:3000" }, // Match frontend
+  cors: { origin: "http://localhost:3000" },
 });
 
 io.on("connection", (socket) => {

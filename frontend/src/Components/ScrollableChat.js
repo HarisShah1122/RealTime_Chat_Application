@@ -1,61 +1,65 @@
-import ScrollableFeed from "react-scrollable-feed";
-import { ChatState } from "../context/chatProvider.js";
+import React, { useEffect, useRef } from "react";
+import { ChatState } from "../context/chatProvider";
 import { Avatar, Tooltip } from "@chakra-ui/react";
 import {
   isLastMessage,
   isSameSender,
   isSameSenderMargin,
   isSameUser,
-} from "../config/ChatLogics.js";
+} from "../config/ChatLogics";
+import mockMessages from "../data/mockMessages";
 
 const ScrollableChat = ({ messages }) => {
   const { user } = ChatState();
+  const displayMessages = messages && messages.length > 0 ? messages : mockMessages;
+  const scrollRef = useRef();
+
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   return (
-    <ScrollableFeed>
-      {messages &&
-        messages.map((m, i) => (
-          <div style={{ display: "flex", whiteSpace: "pre-wrap" }} key={m._id}>
-            {(isSameSender(messages, m, i, user._id) ||
-              isLastMessage(messages, i, user._id)) && (
-              <Tooltip label={m.sender.name} placement="bottom-start" hasArrow>
-                <Avatar
-                  mt="7px"
-                  mr={1}
-                  size="sm"
-                  cursor="pointer"
-                  name={m.sender.name}
-                  src={m.sender.photo}
-                />
-              </Tooltip>
-            )}
-            <span
-              style={{
-                backgroundColor: `${
-                  m.sender._id === user._id ? "#cef8af" : "white"
-                }`,
-                marginLeft: isSameSenderMargin(messages, m, i, user._id),
-                marginRight: 2,
-                marginTop: isSameUser(messages, m, i, user._id) ? 3 : 10,
-                // borderRadius: `10px 0px 15px ${
-                //   m.sender._id === user._id ? "0" : "15px"
-                // }`,
-                // borderRadius: `${
-                //   m.sender._id === user._id ? "0" : "15px 15px 15px 0"
-                // }`,
-                borderRadius: `10px ${
-                  m.sender._id === user._id ? "0px" : "10px"
-                } 10px ${m.sender._id === user._id ? "10px" : "0px"}`,
-                padding: "5px 15px",
-                maxWidth: "75%",
-              }}
-              dangerouslySetInnerHTML={{ __html: m.content }}
-            >
-              {/* {m.content} */}
-            </span>
-          </div>
-        ))}
-    </ScrollableFeed>
+    <div
+      style={{
+        flex: 1,
+        overflowY: "auto", // scrolling enabled
+        paddingRight: "10px",
+      }}
+      className="scrollable-chat"
+    >
+      {displayMessages.map((m, i) => (
+        <div
+          key={m._id}
+          style={{ display: "flex", whiteSpace: "pre-wrap" }}
+          ref={scrollRef}
+        >
+          {(isSameSender(displayMessages, m, i, user._id) ||
+            isLastMessage(displayMessages, i, user._id)) && (
+            <Tooltip label={m.sender.name} placement="bottom-start" hasArrow>
+              <Avatar
+                mt="7px"
+                mr={1}
+                size="sm"
+                cursor="pointer"
+                name={m.sender.name}
+              />
+            </Tooltip>
+          )}
+          <span
+            style={{
+              backgroundColor: m.sender._id === user._id ? "#cef8af" : "white",
+              marginLeft: isSameSenderMargin(displayMessages, m, i, user._id),
+              marginRight: 2,
+              marginTop: isSameUser(displayMessages, m, i, user._id) ? 3 : 10,
+              borderRadius: `10px ${m.sender._id === user._id ? "0px" : "10px"} 10px ${m.sender._id === user._id ? "10px" : "0px"}`,
+              padding: "5px 15px",
+              maxWidth: "75%",
+            }}
+            dangerouslySetInnerHTML={{ __html: m.content }}
+          ></span>
+        </div>
+      ))}
+    </div>
   );
 };
 
